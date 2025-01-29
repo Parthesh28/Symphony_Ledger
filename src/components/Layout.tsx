@@ -26,6 +26,7 @@ export default function Layout() {
   const navLinks = [
     { to: '/explore', label: 'Explore' },
     { to: '/verify', label: 'Verify Music' },
+    {to: '/shows', label: 'Shows'}
   ];
 
   return (

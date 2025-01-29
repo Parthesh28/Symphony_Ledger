@@ -1,6 +1,6 @@
 import React from 'react';
 import { Shield, Music2, DollarSign, Lock } from 'lucide-react';
-import {Tip} from './Tip';
+import { Tip } from './SolanaWalletModal';
 
 export function Features() {
   return (

@@ -15,6 +15,8 @@ import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import { clusterApiUrl } from "@solana/web3.js";
 import { useMemo } from "react";
 import "@solana/wallet-adapter-react-ui/styles.css";
+import SolanaWalletModal from "./components/SolanaWalletModal";
+import { ExploreShows } from "./pages/ExploreShows";
 
 function App() {
   window.Buffer = Buffer;
@@ -25,10 +27,12 @@ function App() {
           <Route index element={<HomePage />} />
           <Route path="explore" element={<ExplorePage />} />
           <Route path="verify" element={<VerifyPage />} />
+          <Route path="shows" element={<ExploreShows />} />
           <Route path="my-songs" element={<MySongsPage />} />
           <Route path="earnings" element={<EarningsPage />} />
         </Route>
       </Routes>
+      <SolanaWalletModal />
     </Context>
   );
 }
