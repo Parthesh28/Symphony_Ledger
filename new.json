@@ -1,0 +1,539 @@
+{
+  "address": "Feq9pcxUbG3Yc8hTMN6hhDihrhN4XNXiK3hxkHQRB1qN",
+  "metadata": {
+    "name": "symphonyledger",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "add_recording",
+      "discriminator": [38, 203, 37, 197, 188, 39, 4, 225],
+      "accounts": [
+        {
+          "name": "recording_account",
+          "writable": true
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "fee_collector",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "length",
+          "type": "u32"
+        },
+        {
+          "name": "release_year",
+          "type": "u32"
+        },
+        {
+          "name": "artist_name",
+          "type": "string"
+        },
+        {
+          "name": "artist_share",
+          "type": "u8"
+        },
+        {
+          "name": "composer_name",
+          "type": "string"
+        },
+        {
+          "name": "composer_pubkey",
+          "type": "pubkey"
+        },
+        {
+          "name": "composer_share",
+          "type": "u8"
+        },
+        {
+          "name": "producer_name",
+          "type": "string"
+        },
+        {
+          "name": "producer_pubkey",
+          "type": "pubkey"
+        },
+        {
+          "name": "producer_share",
+          "type": "u8"
+        },
+        {
+          "name": "label_name",
+          "type": "string"
+        },
+        {
+          "name": "label_pubkey",
+          "type": "pubkey"
+        },
+        {
+          "name": "label_share",
+          "type": "u8"
+        },
+        {
+          "name": "id",
+          "type": "string"
+        },
+        {
+          "name": "title",
+          "type": "string"
+        },
+        {
+          "name": "album",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "transfer_rights",
+      "discriminator": [66, 110, 168, 232, 189, 84, 250, 173],
+      "accounts": [
+        {
+          "name": "recording_account",
+          "writable": true
+        },
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "new_label_name",
+          "type": "string"
+        },
+        {
+          "name": "new_label_pubkey",
+          "type": "pubkey"
+        },
+        {
+          "name": "new_label_share",
+          "type": "u8"
+        }
+      ]
+    },
+    {
+      "name": "distribute_royalties",
+      "discriminator": [231, 198, 160, 162, 181, 219, 140, 100],
+      "accounts": [
+        {
+          "name": "recording_account",
+          "writable": true
+        },
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "artist_account",
+          "writable": true
+        },
+        {
+          "name": "composer_account",
+          "writable": true
+        },
+        {
+          "name": "producer_account",
+          "writable": true
+        },
+        {
+          "name": "label_account",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "create_ticket_sale",
+      "discriminator": [172, 239, 108, 166, 128, 229, 254, 72],
+      "accounts": [
+        {
+          "name": "ticket_sale_account",
+          "writable": true
+        },
+        {
+          "name": "recording_account"
+        },
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "recording_id",
+          "type": "string"
+        },
+        {
+          "name": "ticket_price",
+          "type": "u64"
+        },
+        {
+          "name": "total_tickets",
+          "type": "u32"
+        },
+        {
+          "name": "event_date",
+          "type": "i64"
+        },
+        {
+          "name": "venue",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "purchase_ticket",
+      "discriminator": [90, 91, 173, 20, 72, 109, 15, 146],
+      "accounts": [
+        {
+          "name": "ticket_sale_account",
+          "writable": true
+        },
+        {
+          "name": "ticket_purchase_account",
+          "writable": true
+        },
+        {
+          "name": "buyer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "authority",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "quantity",
+          "type": "u32"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Recording",
+      "discriminator": [127, 40, 57, 149, 55, 75, 215, 111]
+    },
+    {
+      "name": "TicketSale",
+      "discriminator": [9, 138, 226, 102, 204, 241, 250, 148]
+    },
+    {
+      "name": "TicketPurchase",
+      "discriminator": [222, 22, 3, 148, 12, 69, 58, 40]
+    }
+  ],
+  "events": [
+    {
+      "name": "TicketSaleCreated",
+      "discriminator": [241, 208, 247, 161, 14, 123, 171, 138]
+    },
+    {
+      "name": "TicketPurchased",
+      "discriminator": [108, 59, 246, 95, 84, 145, 13, 71]
+    },
+    {
+      "name": "LabelChanged",
+      "discriminator": [11, 193, 36, 173, 133, 250, 172, 1]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "The signer is not authorized to perform this action."
+    },
+    {
+      "code": 6001,
+      "name": "InvalidShares",
+      "msg": "The sum of all shares must equal 100%."
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientTickets",
+      "msg": "Not enough tickets remaining for purchase."
+    },
+    {
+      "code": 6003,
+      "name": "EventExpired",
+      "msg": "The event has already passed."
+    },
+    {
+      "code": 6004,
+      "name": "CalculationError",
+      "msg": "Calculation error occurred."
+    }
+  ],
+  "types": [
+    {
+      "name": "DetailAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "pubkey",
+            "type": "pubkey"
+          },
+          {
+            "name": "share",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Recording",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "length",
+            "type": "u32"
+          },
+          {
+            "name": "release_year",
+            "type": "u32"
+          },
+          {
+            "name": "last_updated",
+            "type": "u128"
+          },
+          {
+            "name": "artist",
+            "type": {
+              "defined": {
+                "name": "DetailAccount"
+              }
+            }
+          },
+          {
+            "name": "composer",
+            "type": {
+              "defined": {
+                "name": "DetailAccount"
+              }
+            }
+          },
+          {
+            "name": "producer",
+            "type": {
+              "defined": {
+                "name": "DetailAccount"
+              }
+            }
+          },
+          {
+            "name": "label",
+            "type": {
+              "defined": {
+                "name": "DetailAccount"
+              }
+            }
+          },
+          {
+            "name": "id",
+            "type": "string"
+          },
+          {
+            "name": "title",
+            "type": "string"
+          },
+          {
+            "name": "album",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketSale",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "recording_id",
+            "type": "string"
+          },
+          {
+            "name": "ticket_price",
+            "type": "u64"
+          },
+          {
+            "name": "total_tickets",
+            "type": "u32"
+          },
+          {
+            "name": "remaining_tickets",
+            "type": "u32"
+          },
+          {
+            "name": "event_date",
+            "type": "i64"
+          },
+          {
+            "name": "venue",
+            "type": "string"
+          },
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "proceeds",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketPurchase",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "ticket_sale",
+            "type": "pubkey"
+          },
+          {
+            "name": "quantity",
+            "type": "u32"
+          },
+          {
+            "name": "purchase_date",
+            "type": "i64"
+          },
+          {
+            "name": "total_paid",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketSaleCreated",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "recording_id",
+            "type": "string"
+          },
+          {
+            "name": "total_tickets",
+            "type": "u32"
+          },
+          {
+            "name": "ticket_price",
+            "type": "u64"
+          },
+          {
+            "name": "event_date",
+            "type": "i64"
+          },
+          {
+            "name": "venue",
+            "type": "string"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TicketPurchased",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "buyer",
+            "type": "pubkey"
+          },
+          {
+            "name": "recording_id",
+            "type": "string"
+          },
+          {
+            "name": "quantity",
+            "type": "u32"
+          },
+          {
+            "name": "total_paid",
+            "type": "u64"
+          },
+          {
+            "name": "purchase_date",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "LabelChanged",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "recording_id",
+            "type": "string"
+          },
+          {
+            "name": "old_label",
+            "type": {
+              "defined": {
+                "name": "DetailAccount"
+              }
+            }
+          },
+          {
+            "name": "new_label",
+            "type": {
+              "defined": {
+                "name": "DetailAccount"
+              }
+            }
+          },
+          {
+            "name": "updated_at",
+            "type": "u128"
+          }
+        ]
+      }
+    }
+  ]
+}

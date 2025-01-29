@@ -1,49 +1,117 @@
-import React, { useState, useEffect } from 'react';
-import { Search, Music2, Loader2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { songs } from '../data/songs';
-import { Song, Genre } from '../types/music';
-import { SongCard } from './SongCard';
-import { SongInfoModal } from './SongInfoModal';
-import { AudioPlayer } from './AudioPlayer';
+import { useState, useEffect } from "react";
+import { Search, Music2, Loader2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { songs } from "../data/songs";
+import { Song, Genre } from "../types/music";
+import { SongCard } from "./SongCard";
+import { SongInfoModal } from "./SongInfoModal";
+import { AudioPlayer } from "./AudioPlayer";
+
+import "@solana/wallet-adapter-react-ui/styles.css";
+import { useSymphonyProgram } from "../smart";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { Keypair } from "@solana/web3.js";
+
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 };
 
 const itemVariants = {
   hidden: { y: 20, opacity: 0 },
   visible: {
     y: 0,
-    opacity: 1
-  }
+    opacity: 1,
+  },
 };
 
 export function ExploreSection() {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedGenre, setSelectedGenre] = useState<Genre>('All');
+  
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedGenre, setSelectedGenre] = useState<Genre>("All");
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [playingSong, setPlayingSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const genres: Genre[] = ['All', 'Pop', 'Rock', 'Hip Hop', 'Electronic', 'Jazz', 'Classical', 'R&B'];
+  const { addRecording } = useSymphonyProgram();
+  const { connected } = useWallet();
+
+  // New function to handle recording submission
+  const handleAddRecording = async () => {
+    if (!connected) {
+      alert("Please connect your wallet first");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const composerKeypair = Keypair.generate();
+      const producerKeypair = Keypair.generate();
+      const labelKeypair = Keypair.generate();
+
+      const recordingData = {
+        length: 300, // Length of the recording in seconds
+        releaseYear: 2023, // Year of release
+        artistName: "John Doe", // Name of the artist
+        artistShare: 40, // Artist's share percentage
+        composerName: "Jane Smith", // Name of the composer
+        composerPubkey: composerKeypair.publicKey.toBase58(), // Random composer public key
+        composerShare: 30, // Composer's share percentage
+        producerName: "Alice Johnson", // Name of the producer
+        producerPubkey: producerKeypair.publicKey.toBase58(), // Random producer public key
+        producerShare: 20, // Producer's share percentage
+        labelName: "Demo Records", // Name of the label
+        labelPubkey: labelKeypair.publicKey.toBase58(), // Random label public key
+        labelShare: 10, // Label's share percentage
+        id: "rec123", // Unique ID for the recording
+        title: "Demo Song", // Title of the recording
+        album: "Demo Album", // Album name
+      };
+      const result = await addRecording(recordingData);
+
+      if (result.success) {
+        // Handle success (e.g., show notification, update UI)
+        console.log("Recording added successfully:", result.signature);
+      } else {
+        throw result.error;
+      }
+    } catch (error) {
+      console.error("Failed to add recording:", error);
+      // Handle error (e.g., show error message)
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const genres: Genre[] = [
+    "All",
+    "Pop",
+    "Rock",
+    "Hip Hop",
+    "Electronic",
+    "Jazz",
+    "Classical",
+    "R&B",
+  ];
 
   // Simulate loading state
   useEffect(() => {
     setTimeout(() => setIsLoading(false), 1000);
   }, []);
 
-  const filteredSongs = songs.filter(song => {
-    const matchesSearch = song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  const filteredSongs = songs.filter((song) => {
+    const matchesSearch =
+      song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       song.artist.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesGenre = selectedGenre === 'All' || song.genre === selectedGenre;
+    const matchesGenre =
+      selectedGenre === "All" || song.genre === selectedGenre;
     return matchesSearch && matchesGenre;
   });
 
@@ -58,6 +126,7 @@ export function ExploreSection() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50">
+      <button onClick={() => handleAddRecording()}>hello</button>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header Section */}
         <motion.div
@@ -69,7 +138,8 @@ export function ExploreSection() {
             Explore Music
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Discover and verify amazing music from talented artists around the world
+            Discover and verify amazing music from talented artists around the
+            world
           </p>
         </motion.div>
 
@@ -82,7 +152,10 @@ export function ExploreSection() {
           >
             {/* Search Bar */}
             <div className="relative max-w-2xl mx-auto">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400" size={20} />
+              <Search
+                className="absolute left-4 top-1/2 transform -translate-y-1/2 text-purple-400"
+                size={20}
+              />
               <input
                 type="text"
                 placeholder="Search songs or artists..."
@@ -102,10 +175,11 @@ export function ExploreSection() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedGenre(genre)}
-                  className={`px-6 py-2 rounded-xl text-sm font-medium transition-all duration-300 shadow-sm ${selectedGenre === genre
-                      ? 'bg-purple-600 text-white shadow-purple-200'
-                      : 'bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-purple-50'
-                    }`}
+                  className={`px-6 py-2 rounded-xl text-sm font-medium transition-all duration-300 shadow-sm ${
+                    selectedGenre === genre
+                      ? "bg-purple-600 text-white shadow-purple-200"
+                      : "bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-purple-50"
+                  }`}
                 >
                   {genre}
                 </motion.button>
@@ -127,11 +201,7 @@ export function ExploreSection() {
             >
               {filteredSongs.length > 0 ? (
                 filteredSongs.map((song) => (
-                  <motion.div
-                    key={song.id}
-                    variants={itemVariants}
-                    layout
-                  >
+                  <motion.div key={song.id} variants={itemVariants} layout>
                     <SongCard
                       song={song}
                       onPlay={handlePlay}
@@ -146,7 +216,9 @@ export function ExploreSection() {
                   className="col-span-full text-center py-20"
                 >
                   <Music2 className="w-16 h-16 text-purple-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No songs found matching your criteria</p>
+                  <p className="text-gray-500">
+                    No songs found matching your criteria
+                  </p>
                 </motion.div>
               )}
             </motion.div>

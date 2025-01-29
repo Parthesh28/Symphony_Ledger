@@ -1,0 +1,121 @@
+{
+  "version": "0.1.0",
+  "name": "symphonyledger",
+  "instructions": [
+    {
+      "name": "addRecording",
+      "accounts": [
+        { "name": "recordingAccount", "isMut": true, "isSigner": false },
+        { "name": "signer", "isMut": true, "isSigner": true },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [
+        { "name": "length", "type": "u32" },
+        { "name": "releaseYear", "type": "u32" },
+        { "name": "artistName", "type": "string" },
+        { "name": "artistShare", "type": "u8" },
+        { "name": "composerName", "type": "string" },
+        { "name": "composerPubkey", "type": "publicKey" },
+        { "name": "composerShare", "type": "u8" },
+        { "name": "producerName", "type": "string" },
+        { "name": "producerPubkey", "type": "publicKey" },
+        { "name": "producerShare", "type": "u8" },
+        { "name": "labelName", "type": "string" },
+        { "name": "labelPubkey", "type": "publicKey" },
+        { "name": "labelShare", "type": "u8" },
+        { "name": "id", "type": "string" },
+        { "name": "title", "type": "string" },
+        { "name": "album", "type": "string" }
+      ]
+    },
+    {
+      "name": "transferRights",
+      "accounts": [
+        { "name": "recordingAccount", "isMut": true, "isSigner": false },
+        { "name": "signer", "isMut": true, "isSigner": true }
+      ],
+      "args": [
+        { "name": "newLabelName", "type": "string" },
+        { "name": "newLabelPubkey", "type": "publicKey" },
+        { "name": "newLabelShare", "type": "u8" }
+      ]
+    },
+    {
+      "name": "distributeRoyalties",
+      "accounts": [
+        { "name": "recordingAccount", "isMut": true, "isSigner": false },
+        { "name": "payer", "isMut": true, "isSigner": true },
+        { "name": "artistAccount", "isMut": true, "isSigner": false },
+        { "name": "composerAccount", "isMut": true, "isSigner": false },
+        { "name": "producerAccount", "isMut": true, "isSigner": false },
+        { "name": "labelAccount", "isMut": true, "isSigner": false },
+        { "name": "systemProgram", "isMut": false, "isSigner": false }
+      ],
+      "args": [{ "name": "amount", "type": "u64" }]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "Recording",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "length", "type": "u32" },
+          { "name": "releaseYear", "type": "u32" },
+          { "name": "lastUpdated", "type": "u128" },
+          { "name": "artist", "type": { "defined": "DetailAccount" } },
+          { "name": "composer", "type": { "defined": "DetailAccount" } },
+          { "name": "producer", "type": { "defined": "DetailAccount" } },
+          { "name": "label", "type": { "defined": "DetailAccount" } },
+          { "name": "id", "type": "string" },
+          { "name": "title", "type": "string" },
+          { "name": "album", "type": "string" }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "DetailAccount",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "name", "type": "string" },
+          { "name": "pubkey", "type": "publicKey" },
+          { "name": "share", "type": "u8" }
+        ]
+      }
+    }
+  ],
+  "events": [
+    {
+      "name": "LabelChanged",
+      "fields": [
+        { "name": "recordingId", "type": "string", "index": false },
+        {
+          "name": "oldLabel",
+          "type": { "defined": "DetailAccount" },
+          "index": false
+        },
+        {
+          "name": "newLabel",
+          "type": { "defined": "DetailAccount" },
+          "index": false
+        },
+        { "name": "updatedAt", "type": "u128", "index": false }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "Unauthorized",
+      "msg": "The signer is not authorized to perform this action."
+    },
+    {
+      "code": 6001,
+      "name": "InvalidShares",
+      "msg": "The sum of all shares must equal 100%."
+    }
+  ]
+}

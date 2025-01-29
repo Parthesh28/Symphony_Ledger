@@ -1,13 +1,24 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, Shield, CheckCircle, XCircle, FileMusic, AlertCircle, Loader2, Hash } from 'lucide-react';
-import { useDropzone } from 'react-dropzone';
-import { AudioFingerprinter } from '../types/audioFingerprint';
+import React, { useState, useCallback, useRef, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Upload,
+  Shield,
+  CheckCircle,
+  XCircle,
+  FileMusic,
+  AlertCircle,
+  Loader2,
+  Hash,
+} from "lucide-react";
+import { useDropzone } from "react-dropzone";
+import { AudioFingerprinter } from "../types/audioFingerprint";
 
 export default function VerifyPage() {
   const [file, setFile] = useState<File | null>(null);
   const [fingerprint, setFingerprint] = useState<string | null>(null);
-  const [verificationStatus, setVerificationStatus] = useState<'idle' | 'processing' | 'success' | 'error'>('idle');
+  const [verificationStatus, setVerificationStatus] = useState<
+    "idle" | "processing" | "success" | "error"
+  >("idle");
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,12 +35,14 @@ export default function VerifyPage() {
   const generateFingerprint = async (file: File) => {
     try {
       setProgress(0);
-      setVerificationStatus('processing');
+      setVerificationStatus("processing");
       setError(null);
 
       // Start fingerprint generation
       setProgress(20);
-      const fingerprint = await fingerprinterRef.current?.generateFingerprint(file);
+      const fingerprint = await fingerprinterRef.current?.generateFingerprint(
+        file
+      );
       setProgress(40);
 
       if (fingerprint) {
@@ -37,16 +50,18 @@ export default function VerifyPage() {
         // Simulate blockchain verification
         await simulateBlockchainCheck();
         setProgress(100);
-        setVerificationStatus('success');
+        setVerificationStatus("success");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error processing audio file');
-      setVerificationStatus('error');
+      setError(
+        err instanceof Error ? err.message : "Error processing audio file"
+      );
+      setVerificationStatus("error");
     }
   };
 
   const simulateBlockchainCheck = async () => {
-    return new Promise<void>(resolve => {
+    return new Promise<void>((resolve) => {
       let currentProgress = 40;
       const interval = setInterval(() => {
         currentProgress += 10;
@@ -70,37 +85,46 @@ export default function VerifyPage() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'audio/*': ['.mp3', '.wav']
+      "audio/*": [".mp3", ".wav"],
     },
     maxSize: 10 * 1024 * 1024, // 10MB
-    multiple: false
+    multiple: false,
   });
 
   const steps = [
     {
       icon: FileMusic,
-      label: 'Analyzing audio file',
-      status: progress >= 20 ? 'complete' : progress > 0 ? 'processing' : 'pending'
+      label: "Analyzing audio file",
+      status:
+        progress >= 20 ? "complete" : progress > 0 ? "processing" : "pending",
     },
     {
       icon: Hash,
-      label: 'Generating audio fingerprint',
-      status: progress >= 40 ? 'complete' : progress > 20 ? 'processing' : 'pending'
+      label: "Generating audio fingerprint",
+      status:
+        progress >= 40 ? "complete" : progress > 20 ? "processing" : "pending",
     },
     {
       icon: Shield,
-      label: 'Verifying on blockchain',
-      status: progress >= 90 ? 'complete' : progress > 40 ? 'processing' : 'pending'
+      label: "Verifying on blockchain",
+      status:
+        progress >= 90 ? "complete" : progress > 40 ? "processing" : "pending",
     },
     {
       icon: CheckCircle,
-      label: 'Creating verification certificate',
-      status: progress >= 100 ? 'complete' : progress > 90 ? 'processing' : 'pending'
-    }
+      label: "Creating verification certificate",
+      status:
+        progress >= 100 ? "complete" : progress > 90 ? "processing" : "pending",
+    },
   ];
+
+  async function handleClick() {
+    console.log(await program.account.recording.fetch());
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 py-16">
+      <button onClick={handleClick}>hi</button>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -135,10 +159,11 @@ export default function VerifyPage() {
           {/* Upload Area */}
           <div
             {...getRootProps()}
-            className={`border-2 border-dashed rounded-xl p-12 transition-all duration-300 ${isDragActive
-                ? 'border-purple-400 bg-purple-50'
-                : 'border-gray-200 hover:border-purple-200 hover:bg-gray-50'
-              }`}
+            className={`border-2 border-dashed rounded-xl p-12 transition-all duration-300 ${
+              isDragActive
+                ? "border-purple-400 bg-purple-50"
+                : "border-gray-200 hover:border-purple-200 hover:bg-gray-50"
+            }`}
           >
             <input {...getInputProps()} />
             <div className="text-center">
@@ -154,14 +179,14 @@ export default function VerifyPage() {
                     "Drop your audio file here..."
                   ) : (
                     <>
-                      <span className="text-purple-600 font-medium">Click to upload</span>
+                      <span className="text-purple-600 font-medium">
+                        Click to upload
+                      </span>
                       {" or drag and drop"}
                     </>
                   )}
                 </p>
-                <p className="text-sm text-gray-500">
-                  MP3, WAV up to 10MB
-                </p>
+                <p className="text-sm text-gray-500">MP3, WAV up to 10MB</p>
               </div>
             </div>
           </div>
@@ -171,40 +196,50 @@ export default function VerifyPage() {
             {file && (
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
+                animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
                 className="mt-8"
               >
-                <h3 className="text-lg font-medium text-gray-900 mb-6">Verification Progress</h3>
+                <h3 className="text-lg font-medium text-gray-900 mb-6">
+                  Verification Progress
+                </h3>
 
                 {/* Steps */}
                 <div className="space-y-6">
                   {steps.map((step, index) => (
                     <div key={index} className="flex items-center gap-4">
                       <div className="relative">
-                        {step.status === 'processing' ? (
+                        {step.status === "processing" ? (
                           <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />
                         ) : (
                           <motion.div
                             initial={{ scale: 0 }}
                             animate={{ scale: 1 }}
-                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            transition={{
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 20,
+                            }}
                           >
                             <step.icon
-                              className={`h-6 w-6 ${step.status === 'complete'
-                                  ? 'text-green-500'
-                                  : 'text-gray-300'
-                                }`}
+                              className={`h-6 w-6 ${
+                                step.status === "complete"
+                                  ? "text-green-500"
+                                  : "text-gray-300"
+                              }`}
                             />
                           </motion.div>
                         )}
                       </div>
-                      <span className={`text-sm ${step.status === 'processing'
-                          ? 'text-purple-600'
-                          : step.status === 'complete'
-                            ? 'text-green-600'
-                            : 'text-gray-500'
-                        }`}>
+                      <span
+                        className={`text-sm ${
+                          step.status === "processing"
+                            ? "text-purple-600"
+                            : step.status === "complete"
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }`}
+                      >
                         {step.label}
                       </span>
                     </div>
@@ -223,13 +258,15 @@ export default function VerifyPage() {
                 </div>
 
                 {/* Fingerprint Display */}
-                {fingerprint && verificationStatus === 'success' && (
+                {fingerprint && verificationStatus === "success" && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="mt-6 p-4 bg-purple-50 rounded-lg"
                   >
-                    <p className="text-sm font-medium text-purple-800">Audio Fingerprint:</p>
+                    <p className="text-sm font-medium text-purple-800">
+                      Audio Fingerprint:
+                    </p>
                     <p className="mt-2 font-mono text-xs text-purple-600 break-all">
                       {fingerprint}
                     </p>
@@ -245,7 +282,9 @@ export default function VerifyPage() {
                   >
                     <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-red-800">Error processing file</p>
+                      <p className="text-sm font-medium text-red-800">
+                        Error processing file
+                      </p>
                       <p className="mt-1 text-sm text-red-600">{error}</p>
                     </div>
                   </motion.div>
