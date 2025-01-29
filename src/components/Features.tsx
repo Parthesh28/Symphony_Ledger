@@ -1,5 +1,6 @@
 import React from 'react';
 import { Shield, Music2, DollarSign, Lock } from 'lucide-react';
+import {Tip} from './Tip';
 
 export function Features() {
   return (
@@ -55,6 +56,7 @@ export function Features() {
               <p className="mt-2 ml-16 text-base text-gray-500">
                 Track and secure your streaming revenue through blockchain technology.
               </p>
+              {/* <Tip/> */}
             </div>
           </div>
         </div>
