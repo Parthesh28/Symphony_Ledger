@@ -12,7 +12,6 @@ import { useSymphonyProgram } from "../smart";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { Keypair } from "@solana/web3.js";
 
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -32,7 +31,6 @@ const itemVariants = {
 };
 
 export function ExploreSection() {
-  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedGenre, setSelectedGenre] = useState<Genre>("All");
   const [selectedSong, setSelectedSong] = useState<Song | null>(null);

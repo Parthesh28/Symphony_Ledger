@@ -134,6 +134,7 @@ export const useSymphonyProgram = () => {
 
   const distributeRoyalties = async (
     amount: number,
+    recording: string,
     artistPubkey: string,
     composerPubkey: string,
     producerPubkey: string,
@@ -143,19 +144,10 @@ export const useSymphonyProgram = () => {
       if (!wallet) return;
       const program = getProgram();
 
-      // Seed for the PDA
-      const SEED = "recording";
-
-      // Generate the PDA
-      const [recordingAccount, _] = PublicKey.findProgramAddressSync(
-        [Buffer.from(SEED), wallet.publicKey.toBuffer()],
-        PROGRAM_ID
-      );
-
       const tx = await program.methods
         .distributeRoyalties(new BN(amount))
         .accounts({
-          recordingAccount,
+          recordingAccount: recording,
           payer: wallet.publicKey,
           artistAccount: new PublicKey(artistPubkey),
           composerAccount: new PublicKey(composerPubkey),

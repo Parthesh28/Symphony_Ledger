@@ -19,7 +19,8 @@ import SolanaWalletModal from "./components/SolanaWalletModal";
 import { ExploreShows } from "./pages/ExploreShows";
 import { ShowTickets } from "./pages/ShowTickets";
 import ConcertDetails from "./pages/ConcertDetails";
-import { SongRegistrationForm } from "./pages/SongRegistrationForm";
+import MusicMarketplace from "./pages/Royalty";
+import TransferRights from "./pages/TransferRights";
 
 function App() {
   window.Buffer = Buffer;
@@ -34,8 +35,9 @@ function App() {
           <Route path="my-songs" element={<MySongsPage />} />
           <Route path="earnings" element={<EarningsPage />} />
           <Route path="tickets" element={<ShowTickets />} />
+          <Route path="royalty" element={<MusicMarketplace />} />
+          <Route path="rights" element={<TransferRights />} />
           <Route path="concert/:id" element={<ConcertDetails />} />
-          <Route path="song-details" element={<SongRegistrationForm />} />
         </Route>
       </Routes>
       <SolanaWalletModal />
