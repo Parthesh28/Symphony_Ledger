@@ -86,10 +86,10 @@ export function ShowTickets() {
             <h1 className="text-4xl font-bold text-primary">My Tickets</h1>
           </div>
           <button
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/shows')}
             className="text-primary hover:text-primary-dark flex items-center gap-2"
           >
-            ← Back to Explore
+            ← Back
           </button>
         </div>
 

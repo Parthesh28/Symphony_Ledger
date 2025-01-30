@@ -1,27 +1,71 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, Clock, MapPin, Music, Ticket } from 'lucide-react';
-import { concerts } from './ExploreShows';
+import { Calendar, MapPin, Clock, ArrowLeft, Share2, Heart, Ticket } from 'lucide-react';
 
-export function ConcertDetails() {
+function ConcertDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [ticketQuantity, setTicketQuantity] = useState(1);
+
+  interface Concert {
+    id: string;
+    title: string;
+    artist: string;
+    date: string;
+    time: string;
+    venue: string;
+    city: string;
+    price: number;
+    image: string;
+    description: string;
+  }
+
+  // Data
+  const concerts: Concert[] = [
+    {
+      id: '1',
+      title: 'Summer Vibes Festival',
+      artist: 'Taylor Swift',
+      date: '2024-07-15',
+      time: '19:00',
+      venue: 'Central Park Arena',
+      city: 'New York, NY',
+      price: 2.5,
+      image: '/api/placeholder/400/320',
+      description: 'Experience an unforgettable evening with Taylor Swift as she performs her greatest hits under the summer stars.'
+    },
+    {
+      id: '2',
+      title: 'Rock Revolution',
+      artist: 'Foo Fighters',
+      date: '2024-08-22',
+      time: '20:00',
+      venue: 'Stadium X',
+      city: 'Los Angeles, CA',
+      price: 1.8,
+      image: '/api/placeholder/400/320',
+      description: 'Get ready for an explosive night of rock music with the legendary Foo Fighters.'
+    },
+    {
+      id: '3',
+      title: 'Jazz Night',
+      artist: 'Diana Krall',
+      date: '2024-09-10',
+      time: '21:00',
+      venue: 'Blue Note Jazz Club',
+      city: 'Chicago, IL',
+      price: 3.2,
+      image: '/api/placeholder/400/320',
+      description: 'An intimate evening of jazz classics and original compositions by the incomparable Diana Krall.'
+    }
+  ];
+
+  // Find the concert from the concerts array
   const concert = concerts.find(c => c.id === id);
 
   if (!concert) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Music className="w-16 h-16 text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Concert not found</h2>
-          <button
-            onClick={() => navigate('/')}
-            className="text-primary hover:text-primary-dark"
-          >
-            Back to Explore
-          </button>
-        </div>
+        <p>Concert not found</p>
       </div>
     );
   }
@@ -32,92 +76,92 @@ export function ConcertDetails() {
     year: 'numeric'
   });
 
-  const totalPrice = concert.price * ticketQuantity;
-
   return (
-    <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Hero Section with Image */}
+      <div className="relative h-96">
+        <div className="absolute inset-0">
+          <img
+            src={concert.image}
+            alt={concert.title}
+            className="w-full h-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+        </div>
+
+        {/* Back Button */}
         <button
-          onClick={() => navigate('/')}
-          className="mb-8 text-primary hover:text-primary-dark flex items-center gap-2"
+          onClick={() => navigate(-1)}
+          className="absolute top-6 left-6 z-10 p-2 rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors backdrop-blur-sm"
         >
-          ← Back to Explore
+          <ArrowLeft className="w-6 h-6" />
         </button>
 
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="h-96 relative">
-            <img 
-              src={concert.image} 
-              alt={concert.title} 
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-black/20 flex items-center justify-center">
-              <div className="text-center text-white">
-                <h1 className="text-5xl font-bold mb-2">{concert.title}</h1>
-                <p className="text-2xl text-primary-light">{concert.artist}</p>
+        {/* Action Buttons */}
+        <div className="absolute top-6 right-6 z-10 flex gap-3">
+          <button className="p-2 rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors backdrop-blur-sm">
+            <Share2 className="w-6 h-6" />
+          </button>
+          <button className="p-2 rounded-full bg-black/20 hover:bg-black/30 text-white transition-colors backdrop-blur-sm">
+            <Heart className="w-6 h-6" />
+          </button>
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-32 relative z-10">
+        <div className="bg-white rounded-3xl shadow-xl p-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+            {/* Main Content */}
+            <div className="lg:col-span-2">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">{concert.title}</h1>
+              <p className="text-2xl text-primary font-medium mb-6">{concert.artist}</p>
+
+              <div className="space-y-4 mb-8">
+                <div className="flex items-center text-gray-600">
+                  <Calendar className="w-5 h-5 mr-3 text-primary" />
+                  <span>{formattedDate}</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <Clock className="w-5 h-5 mr-3 text-primary" />
+                  <span>{concert.time}</span>
+                </div>
+                <div className="flex items-center text-gray-600">
+                  <MapPin className="w-5 h-5 mr-3 text-primary" />
+                  <span>{concert.venue}, {concert.city}</span>
+                </div>
+              </div>
+
+              <div className="prose max-w-none">
+                <h2 className="text-xl font-semibold mb-4">About the Event</h2>
+                <p className="text-gray-600 leading-relaxed">{concert.description}</p>
               </div>
             </div>
-          </div>
 
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-              <div>
-                <h2 className="text-2xl font-bold text-primary mb-6">Event Details</h2>
+            {/* Ticket Section */}
+            <div className="lg:col-span-1">
+              <div className="bg-gray-50 rounded-2xl p-6">
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Ticket Price</h3>
+                  <p className="text-3xl font-bold text-primary">{concert.price} SOL</p>
+                </div>
+
                 <div className="space-y-4">
-                  <div className="flex items-center text-gray-700">
-                    <Calendar className="w-6 h-6 mr-3 text-primary" />
-                    <span>{formattedDate}</span>
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <Clock className="w-6 h-6 mr-3 text-primary" />
-                    <span>{concert.time}</span>
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <MapPin className="w-6 h-6 mr-3 text-primary" />
-                    <span>{concert.venue}, {concert.city}</span>
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <Music className="w-6 h-6 mr-3 text-primary" />
-                    <span>{concert.artist}</span>
-                  </div>
-                </div>
-
-                <div className="mt-8">
-                  <h3 className="text-xl font-semibold mb-4 text-primary">About the Event</h3>
-                  <p className="text-gray-700 leading-relaxed">{concert.description}</p>
-                </div>
-              </div>
-
-              <div>
-                <div className="bg-white p-6 rounded-lg border-2 border-primary/20">
-                  <h3 className="text-xl font-bold mb-4 text-primary">Purchase Tickets</h3>
-                  <div className="mb-6">
-                    <p className="text-gray-700 mb-2">Price per ticket</p>
-                    <p className="text-3xl font-bold text-primary">{concert.price} SOL</p>
-                  </div>
-                  <div className="mb-6">
-                    <label className="block text-gray-700 mb-2">Number of tickets</label>
-                    <select 
-                      className="w-full p-2 border-2 border-primary/20 rounded-lg focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
-                      value={ticketQuantity}
-                      onChange={(e) => setTicketQuantity(Number(e.target.value))}
-                    >
-                      {[1, 2, 3, 4, 5, 6].map(num => (
-                        <option key={num} value={num}>{num}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="mb-6">
-                    <p className="text-gray-700">Total price</p>
-                    <p className="text-2xl font-bold text-primary">{totalPrice.toFixed(2)} SOL</p>
-                  </div>
-                  <button className="w-full bg-primary text-white py-3 rounded-lg flex items-center justify-center space-x-2 hover:bg-primary-dark transition-colors">
+                  <button
+                    onClick={() => {
+                      // Add ticket purchase logic here
+                    }}
+                    className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary-dark text-white px-6 py-4 rounded-xl font-semibold transition-colors"
+                  >
                     <Ticket className="w-5 h-5" />
-                    <span>Buy Tickets</span>
+                    Buy Tickets
                   </button>
-                  <p className="text-sm text-gray-500 mt-4 text-center">
-                    Secure checkout powered by Solana Pay
-                  </p>
+
+                  <div className="text-sm text-gray-500">
+                    <p className="mb-2">• Instant confirmation</p>
+                    <p className="mb-2">• Digital tickets sent to your wallet</p>
+                    <p>• Secure blockchain transaction</p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -127,3 +171,5 @@ export function ConcertDetails() {
     </div>
   );
 }
+
+export default ConcertDetails;

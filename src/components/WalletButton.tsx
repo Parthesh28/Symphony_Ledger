@@ -7,6 +7,7 @@ import {
   Music2,
   DollarSign,
   LogOut,
+  Ticket,
 } from "lucide-react";
 import { WalletInfo } from "../types/music";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
@@ -84,6 +85,13 @@ export function WalletButton() {
               >
                 <DollarSign size={16} />
                 Earnings
+              </Link>
+              <Link
+                to={'/tickets'} 
+                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+              >
+                <Ticket className="w-5 h-5 mr-2" />
+                My Tickets
               </Link>
               <button className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md">
                 <LogOut size={16} />

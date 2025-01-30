@@ -17,6 +17,9 @@ import { useMemo } from "react";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import SolanaWalletModal from "./components/SolanaWalletModal";
 import { ExploreShows } from "./pages/ExploreShows";
+import { ShowTickets } from "./pages/ShowTickets";
+import ConcertDetails from "./pages/ConcertDetails";
+import { SongRegistrationForm } from "./pages/SongRegistrationForm";
 
 function App() {
   window.Buffer = Buffer;
@@ -30,6 +33,9 @@ function App() {
           <Route path="shows" element={<ExploreShows />} />
           <Route path="my-songs" element={<MySongsPage />} />
           <Route path="earnings" element={<EarningsPage />} />
+          <Route path="tickets" element={<ShowTickets />} />
+          <Route path="concert/:id" element={<ConcertDetails />} />
+          <Route path="song-details" element={<SongRegistrationForm />} />
         </Route>
       </Routes>
       <SolanaWalletModal />
