@@ -1,82 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Clock, Ticket, Search, Music, Heart } from 'lucide-react';
+import { Music, Search, Heart, Calendar, Clock, MapPin } from 'lucide-react';
+import { useSymphonyProgram } from '../smart.ts';
+import { LAMPORTS_PER_SOL, PublicKey } from '@solana/web3.js';
+import { BN } from "@coral-xyz/anchor";
 
-// Types
-interface Concert {
-  id: string;
-  title: string;
-  artist: string;
-  date: string;
-  time: string;
-  venue: string;
-  city: string;
-  price: number;
-  image: string;
-  description: string;
+interface Show {
+  publicKey: PublicKey;
+  account: {
+    recordingId: string;
+    ticketPrice: BN;
+    totalTickets: number;
+    soldTickets: number;
+    eventDate: BN;
+    venue: string;
+    authority: PublicKey;
+  };
 }
 
-// Data
-const concerts: Concert[] = [
-  {
-    id: '1',
-    title: 'Summer Vibes Festival',
-    artist: 'Taylor Swift',
-    date: '2024-07-15',
-    time: '19:00',
-    venue: 'Central Park Arena',
-    city: 'New York, NY',
-    price: 2.5,
-    image: '/api/placeholder/400/320',
-    description: 'Experience an unforgettable evening with Taylor Swift as she performs her greatest hits under the summer stars.'
-  },
-  {
-    id: '2',
-    title: 'Rock Revolution',
-    artist: 'Foo Fighters',
-    date: '2024-08-22',
-    time: '20:00',
-    venue: 'Stadium X',
-    city: 'Los Angeles, CA',
-    price: 1.8,
-    image: '/api/placeholder/400/320',
-    description: 'Get ready for an explosive night of rock music with the legendary Foo Fighters.'
-  },
-  {
-    id: '3',
-    title: 'Jazz Night',
-    artist: 'Diana Krall',
-    date: '2024-09-10',
-    time: '21:00',
-    venue: 'Blue Note Jazz Club',
-    city: 'Chicago, IL',
-    price: 3.2,
-    image: '/api/placeholder/400/320',
-    description: 'An intimate evening of jazz classics and original compositions by the incomparable Diana Krall.'
-  }
-];
-
-function ConcertCard({ concert }: { concert: Concert }) {
+function ShowCard({ show }: { show: Show }) {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
-  const formattedDate = new Date(concert.date).toLocaleDateString('en-US', {
+  const [isLoading, setIsLoading] = useState(false);
+  const { purchaseTicket } = useSymphonyProgram();
+  
+  const formattedDate = new Date(show.account.eventDate.toNumber()).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric'
   });
+
+  const formattedTime = new Date(show.account.eventDate.toNumber()).toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const priceInSol = show.account.ticketPrice.toNumber() / 1000000000;
+
+  const handleSubmit = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigation when clicking the button
+    
+    setIsLoading(true);
+    try {
+      const result = await purchaseTicket(
+        1, // quantity - purchasing 1 ticket
+        show.account.authority // authority from the show
+      );
+      
+      if (result.success) {
+        console.log('Ticket purchased successfully:', result.signature);
+        // You could add a success notification here
+      } else {
+        console.error('Failed to purchase ticket:', result.error);
+        // You could add an error notification here
+      }
+    } catch (error) {
+      console.error('Error purchasing ticket:', error);
+      // You could add an error notification here
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div
       className="relative bg-white rounded-2xl overflow-hidden group cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={() => navigate(`/concert/${concert.id}`)}
+      onClick={() => navigate(`/show/${show.publicKey.toString()}`)}
     >
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
       <div className="h-64 overflow-hidden">
         <img
-          src={concert.image}
-          alt={concert.title}
+          src="/api/placeholder/400/320"
+          alt={`Show ${show.account.recordingId}`}
           className={`w-full h-full object-cover transition-transform duration-700 ${isHovered ? 'scale-110' : 'scale-100'}`}
         />
       </div>
@@ -84,14 +81,12 @@ function ConcertCard({ concert }: { concert: Concert }) {
         <div className="transform transition-transform duration-300 translate-y-8 group-hover:translate-y-0">
           <div className="flex justify-between items-start mb-3">
             <div>
-              <h3 className="text-2xl font-bold mb-1">{concert.title}</h3>
-              <p className="text-lg font-medium text-white/90">{concert.artist}</p>
+              <h3 className="text-2xl font-bold mb-1">Show #{show.account.recordingId}</h3>
             </div>
             <button
               className="p-2 rounded-full bg-white/10 backdrop-blur-sm hover:bg-white/20 transition-colors"
               onClick={(e) => {
                 e.stopPropagation();
-                // Add favorite logic here
               }}
             >
               <Heart className="w-5 h-5" />
@@ -105,24 +100,27 @@ function ConcertCard({ concert }: { concert: Concert }) {
             </div>
             <div className="flex items-center text-white/80">
               <Clock className="w-4 h-4 mr-2" />
-              <span className="text-sm">{concert.time}</span>
+              <span className="text-sm">{formattedTime}</span>
             </div>
             <div className="flex items-center text-white/80">
               <MapPin className="w-4 h-4 mr-2" />
-              <span className="text-sm">{concert.venue}, {concert.city}</span>
+              <span className="text-sm">{show.account.venue}</span>
             </div>
           </div>
 
           <div className="flex items-center justify-between opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <span className="text-2xl font-bold">{concert.price} SOL</span>
+            <div className="space-y-1">
+              <span className="text-2xl font-bold">{priceInSol * LAMPORTS_PER_SOL} SOL</span>
+              <div className="text-sm text-white/80">
+                {show.account.soldTickets} / {show.account.totalTickets} tickets sold
+              </div>
+            </div>
             <button
-              className="px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-white/90 transition-colors"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigate(`/concert/${concert.id}`);
-              }}
+              className={`px-4 py-2 bg-white text-black rounded-full text-sm font-medium hover:bg-white/90 transition-colors ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleSubmit}
+              disabled={isLoading}
             >
-              Get Tickets
+              {isLoading ? 'Purchasing...' : 'Get Tickets'}
             </button>
           </div>
         </div>
@@ -132,13 +130,33 @@ function ConcertCard({ concert }: { concert: Concert }) {
 }
 
 export function ExploreShows() {
+  // Rest of the ExploreShows component remains the same
   const [searchTerm, setSearchTerm] = useState('');
+  const [shows, setShows] = useState<Show[]>([]);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const { fetchAllShows } = useSymphonyProgram();
 
-  const filteredConcerts = concerts.filter(concert =>
-    concert.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    concert.artist.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    concert.city.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    const fetchShows = async () => {
+      try {
+        const showsData = await fetchAllShows();
+        if (Array.isArray(showsData)) {
+          setShows(showsData);
+        }
+      } catch (error) {
+        console.error("Error fetching shows:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchShows();
+  }, [fetchAllShows]);
+
+  const filteredShows = shows.filter(show =>
+    show.account.recordingId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    show.account.venue.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -150,10 +168,8 @@ export function ExploreShows() {
               <Music className="w-8 h-8 text-primary" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold">
-                Live Shows
-              </h1>
-              <p className="text-gray-600 mt-1">Discover upcoming concerts near you</p>
+              <h1 className="text-4xl font-bold">Live Shows</h1>
+              <p className="text-gray-600 mt-1">Discover upcoming shows on Symphony</p>
             </div>
           </div>
 
@@ -171,14 +187,18 @@ export function ExploreShows() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredConcerts.map(concert => (
-            <ConcertCard key={concert.id} concert={concert} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="text-lg text-gray-600">Loading shows...</div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filteredShows.map(show => (
+              <ShowCard key={show.publicKey.toString()} show={show} />
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
-export { concerts };

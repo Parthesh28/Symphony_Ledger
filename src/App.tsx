@@ -21,6 +21,7 @@ import { ShowTickets } from "./pages/ShowTickets";
 import ConcertDetails from "./pages/ConcertDetails";
 import MusicMarketplace from "./pages/Royalty";
 import TransferRights from "./pages/TransferRights";
+import CreateConcertTicket from "./pages/CreateConcertTicket";
 
 function App() {
   window.Buffer = Buffer;
@@ -37,6 +38,7 @@ function App() {
           <Route path="tickets" element={<ShowTickets />} />
           <Route path="royalty" element={<MusicMarketplace />} />
           <Route path="rights" element={<TransferRights />} />
+          <Route path="createshow" element={<CreateConcertTicket />} />
           <Route path="concert/:id" element={<ConcertDetails />} />
         </Route>
       </Routes>
@@ -48,7 +50,7 @@ function App() {
 const Context = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
 
-  const endpoint = useMemo(() => "https://devnet.helius-rpc.com/?api-key=c5d32b63-b2f3-46b9-9535-0d5510769438", [network]);
+  const endpoint = useMemo(() => "https://devnet.helius-rpc.com/?api-key=7b81edb9-bad5-4dad-a030-b5cad7072fd3", [network]);
 
   return (
     <ConnectionProvider endpoint={endpoint}>

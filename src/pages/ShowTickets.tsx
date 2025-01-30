@@ -1,37 +1,37 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Clock, Ticket, Music } from 'lucide-react';
-import { concerts } from './ExploreShows';
+// import { concerts } from './ExploreShows';
 
-interface Ticket {
-  id: string;
-  concertId: string;
-  recipientName: string;
-  purchaseDate: string;
-  quantity: number;
-  concert: typeof concerts[0];
-}
+// interface Ticket {
+//   id: string;
+//   concertId: string;
+//   recipientName: string;
+//   purchaseDate: string;
+//   quantity: number;
+//   concert: typeof concerts[0];
+// }
 
-const tickets: Ticket[] = [
-  {
-    id: '1',
-    concertId: '1',
-    recipientName: 'John Doe',
-    purchaseDate: '2024-03-15',
-    quantity: 2,
-    concert: concerts[0]
-  },
-  {
-    id: '2',
-    concertId: '2',
-    recipientName: 'Jane Smith',
-    purchaseDate: '2024-03-14',
-    quantity: 1,
-    concert: concerts[1]
-  }
-];
+// const tickets: Ticket[] = [
+//   {
+//     id: '1',
+//     concertId: '1',
+//     recipientName: 'John Doe',
+//     purchaseDate: '2024-03-15',
+//     quantity: 2,
+//     concert: concerts[0]
+//   },
+//   {
+//     id: '2',
+//     concertId: '2',
+//     recipientName: 'Jane Smith',
+//     purchaseDate: '2024-03-14',
+//     quantity: 1,
+//     concert: concerts[1]
+//   }
+// ];
 
-function TicketCard({ ticket }: { ticket: Ticket }) {
+function TicketCard({ ticket }: { ticket: any }) {
   const formattedDate = new Date(ticket.concert.date).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
@@ -94,12 +94,12 @@ export function ShowTickets() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {tickets.map(ticket => (
+          {/* {tickets.map(ticket => (
             <TicketCard key={ticket.id} ticket={ticket} />
-          ))}
+          ))} */}
         </div>
 
-        {tickets.length === 0 && (
+        {/* {tickets.length === 0 && (
           <div className="text-center py-12">
             <Music className="w-16 h-16 text-primary mx-auto mb-4" />
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">No tickets found</h2>
@@ -111,7 +111,7 @@ export function ShowTickets() {
               Explore Shows
             </button>
           </div>
-        )}
+        )} */}
       </div>
     </div>
   );

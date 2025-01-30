@@ -17,7 +17,7 @@ export const useSymphonyProgram = () => {
   const wallet = useAnchorWallet();
 
   const getProgram = () => {
-    // if (!wallet) throw new Error("Wallet not connected");
+    if (!wallet) throw new Error("Wallet not connected");
 
     const provider = new AnchorProvider(
       connection,
@@ -47,15 +47,11 @@ export const useSymphonyProgram = () => {
     album: string;
   }) => {
     try {
-      if (!wallet) return;
+      if (!wallet) throw new Error("Wallet not connected");
       const program = getProgram();
 
-      // Seed for the PDA
-      const SEED = "recording";
-
-      // Generate the PDA
-      const [recordingAccount, _] = PublicKey.findProgramAddressSync(
-        [Buffer.from(SEED), wallet.publicKey.toBuffer()],
+      const [recordingAccount] = PublicKey.findProgramAddressSync(
+        [Buffer.from("recording"), wallet.publicKey.toBuffer()],
         PROGRAM_ID
       );
 
@@ -79,7 +75,7 @@ export const useSymphonyProgram = () => {
           recordingData.album
         )
         .accounts({
-          recordingAccount: recordingAccount,
+          recordingAccount,
           signer: wallet.publicKey,
           feeCollector: new PublicKey(
             "DuNKWq3a93BysBvKS2xR9hcJCVfmT494F2RiFM7jpt8b"
@@ -101,15 +97,11 @@ export const useSymphonyProgram = () => {
     newLabelShare: number
   ) => {
     try {
-      if (!wallet) return;
+      if (!wallet) throw new Error("Wallet not connected");
       const program = getProgram();
 
-      // Seed for the PDA
-      const SEED = "recording";
-
-      // Generate the PDA
-      const [recordingAccount, _] = PublicKey.findProgramAddressSync(
-        [Buffer.from(SEED), wallet.publicKey.toBuffer()],
+      const [recordingAccount] = PublicKey.findProgramAddressSync(
+        [Buffer.from("recording"), wallet.publicKey.toBuffer()],
         PROGRAM_ID
       );
 
@@ -134,20 +126,20 @@ export const useSymphonyProgram = () => {
 
   const distributeRoyalties = async (
     amount: number,
-    recording: string,
+    recordingAccountPubkey: string,
     artistPubkey: string,
     composerPubkey: string,
     producerPubkey: string,
     labelPubkey: string
   ) => {
     try {
-      if (!wallet) return;
+      if (!wallet) throw new Error("Wallet not connected");
       const program = getProgram();
 
       const tx = await program.methods
         .distributeRoyalties(new BN(amount))
         .accounts({
-          recordingAccount: recording,
+          recordingAccount: new PublicKey(recordingAccountPubkey),
           payer: wallet.publicKey,
           artistAccount: new PublicKey(artistPubkey),
           composerAccount: new PublicKey(composerPubkey),
@@ -172,21 +164,16 @@ export const useSymphonyProgram = () => {
     venue: string
   ) => {
     try {
-      if (!wallet) return;
+      if (!wallet) throw new Error("Wallet not connected");
       const program = getProgram();
 
-      // Seed for the PDA
-      const SEED = "ticket-sale";
-
-      // Generate the PDA for ticket sale account
-      const [ticketSaleAccount, _] = PublicKey.findProgramAddressSync(
-        [Buffer.from(SEED), wallet.publicKey.toBuffer()],
+      const [recordingAccount] = PublicKey.findProgramAddressSync(
+        [Buffer.from("recording"), wallet.publicKey.toBuffer()],
         PROGRAM_ID
       );
 
-      // Generate the PDA for recording account
-      const [recordingAccount] = PublicKey.findProgramAddressSync(
-        [Buffer.from("recording"), wallet.publicKey.toBuffer()],
+      const [ticketSaleAccount] = PublicKey.findProgramAddressSync(
+        [Buffer.from("ticket-sale"), recordingAccount.toBuffer()],
         PROGRAM_ID
       );
 
@@ -214,20 +201,20 @@ export const useSymphonyProgram = () => {
   };
 
   const purchaseTicket = async (
-    ticketSaleAccount: PublicKey,
     quantity: number,
     authority: PublicKey
   ) => {
     try {
-      if (!wallet) return;
+      if (!wallet) throw new Error("Wallet not connected");
       const program = getProgram();
 
-      // Seed for the PDA
-      const SEED = "ticket-purchase";
+      const [ticketSaleAccount] = PublicKey.findProgramAddressSync(
+        [Buffer.from("ticket-sale"), wallet.publicKey.toBuffer()],
+        PROGRAM_ID
+      );
 
-      // Generate the PDA for ticket purchase account
-      const [ticketPurchaseAccount, _] = PublicKey.findProgramAddressSync(
-        [Buffer.from(SEED), wallet.publicKey.toBuffer()],
+      const [ticketPurchaseAccount] = PublicKey.findProgramAddressSync(
+        [Buffer.from("ticket-purchase"), wallet.publicKey.toBuffer()],
         PROGRAM_ID
       );
 
@@ -251,10 +238,21 @@ export const useSymphonyProgram = () => {
 
   const fetchAllRecordings = async () => {
     try {
+      if (!wallet) throw new Error("Wallet not connected");
       const program = getProgram();
       return await program.account.recording.all();
     } catch (error) {
-      console.error("Error purchasing ticket:", error);
+      console.error("Error fetching recordings:", error);
+      return { success: false, error };
+    }
+  };
+  const fetchAllShows = async () => {
+    try {
+      if (!wallet) throw new Error("Wallet not connected");
+      const program = getProgram();
+      return await program.account.ticketSale.all();
+    } catch (error) {
+      console.error("Error fetching recordings:", error);
       return { success: false, error };
     }
   };
@@ -266,5 +264,6 @@ export const useSymphonyProgram = () => {
     createTicketSale,
     purchaseTicket,
     fetchAllRecordings,
+    fetchAllShows
   };
 };
