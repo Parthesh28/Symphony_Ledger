@@ -48,7 +48,7 @@ function App() {
 const Context = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
 
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+  const endpoint = useMemo(() => "https://devnet.helius-rpc.com/?api-key=c5d32b63-b2f3-46b9-9535-0d5510769438", [network]);
 
   return (
     <ConnectionProvider endpoint={endpoint}>

@@ -3,14 +3,18 @@ import { useDropzone } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Upload, Shield, CheckCircle, Music, Users,
-  Loader2, Hash, AlertCircle, ChevronDown
+  Loader2, Hash, AlertCircle, AlertTriangle, FileMusic
 } from 'lucide-react';
 import { useSymphonyProgram } from '../smart';
-import { useWallet } from '@solana/wallet-adapter-react';
+import { useAnchorWallet, useWallet } from '@solana/wallet-adapter-react';
 import { Keypair } from '@solana/web3.js';
 import { AudioFingerprinter } from '../types/audioFingerprint';
+import { analyzeAudioContent } from '../../gemini';
 
 const UnifiedSongRegistration = () => {
+  const wallet = useAnchorWallet();
+  const { connected, connect } = useWallet();
+
   // File and verification states
   const [file, setFile] = useState(null);
   const [fingerprint, setFingerprint] = useState(null);
@@ -18,6 +22,7 @@ const UnifiedSongRegistration = () => {
   const [verificationProgress, setVerificationProgress] = useState(0);
   const [error, setError] = useState(null);
   const [uploadState, setUploadState] = useState(false);
+  const [contentAnalysis, setContentAnalysis] = useState(null);
 
   // Form submission states
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +30,6 @@ const UnifiedSongRegistration = () => {
 
   // Hooks
   const { fetchAllRecordings, addRecording } = useSymphonyProgram();
-  const { connected } = useWallet();
   const fingerprinterRef = useRef(null);
 
   const [formData, setFormData] = useState({
@@ -73,22 +77,33 @@ const UnifiedSongRegistration = () => {
       setVerificationProgress(0);
       setVerificationStatus('processing');
       setError(null);
+      setContentAnalysis(null);
 
-      setVerificationProgress(20);
+      // Start fingerprint generation
+      setVerificationProgress(15);
       const fingerprint = await fingerprinterRef.current?.generateFingerprint(file);
-      setVerificationProgress(40);
+      setVerificationProgress(30);
 
       if (fingerprint) {
         setFingerprint(fingerprint);
-        const isMatch = await compareFP(file);
 
-        if (!uploadState) {
-          setVerificationStatus('success');
+        // Analyze content
+        setVerificationProgress(40);
+        const analysis = await analyzeAudioContent(fingerprint);
+        setContentAnalysis(analysis);
+        setVerificationProgress(60);
+
+        // Check for duplicates
+        const isMatch = await compareFP(fingerprint);
+        setVerificationProgress(80);
+
+        if (!isMatch) {
           setVerificationProgress(100);
+          setVerificationStatus('success');
           setActiveSection('form');
         } else {
           setVerificationStatus('error');
-          setError('No matching recording found.');
+          setError('Duplicate item found. Verification unsuccessful.');
         }
       }
     } catch (err) {
@@ -97,21 +112,19 @@ const UnifiedSongRegistration = () => {
     }
   };
 
-  const compareFP = async (file) => {
+  const compareFP = async (fingerprint) => {
     const response = await fetchAllRecordings();
-    const fingerprint = await fingerprinterRef.current?.generateFingerprint(file);
+    console.log(response);
 
     if (fingerprint) {
       for (let i = 0; i < response?.length; i++) {
         if (fingerprint === response[i]?.account?.id) {
-          setUploadState(false);
-          return true;
+          return true; // Duplicate found
         }
       }
     }
 
-    setUploadState(true);
-    return false;
+    return false; // No duplicate found
   };
 
   const onDrop = useCallback(async (acceptedFiles) => {
@@ -125,10 +138,10 @@ const UnifiedSongRegistration = () => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'audio/*': ['.mp3', '.wav'],
+      'audio/*': ['.mp3', '.wav']
     },
-    maxSize: 10 * 1024 * 1024,
-    multiple: false,
+    maxSize: 10 * 1024 * 1024, // 10MB
+    multiple: false
   });
 
   const handleSubmit = async (e) => {
@@ -164,10 +177,9 @@ const UnifiedSongRegistration = () => {
         labelName: formData.label_name,
         labelPubkey: formData.label_pubkey || Keypair.generate().publicKey.toBase58(),
         labelShare: formData.label_share,
-        id: formData.id,
+        id: fingerprint,
         title: formData.title,
         album: formData.album,
-        fingerprint
       };
 
       const result = await addRecording(recordingData);
@@ -185,10 +197,56 @@ const UnifiedSongRegistration = () => {
     }
   };
 
+  const steps = [
+    {
+      icon: FileMusic,
+      label: 'Analyzing audio file',
+      status: verificationProgress >= 15 ? 'complete' : verificationProgress > 0 ? 'processing' : 'pending'
+    },
+    {
+      icon: AlertTriangle,
+      label: 'Checking content',
+      status: verificationProgress >= 40 ? 'complete' : verificationProgress > 30 ? 'processing' : 'pending'
+    },
+    {
+      icon: Hash,
+      label: 'Generating audio fingerprint',
+      status: verificationProgress >= 60 ? 'complete' : verificationProgress > 40 ? 'processing' : 'pending'
+    },
+    {
+      icon: Shield,
+      label: 'Verifying on blockchain',
+      status: verificationProgress >= 80 ? 'complete' : verificationProgress > 60 ? 'processing' : 'pending'
+    },
+    {
+      icon: CheckCircle,
+      label: 'Creating verification certificate',
+      status: verificationProgress >= 100 ? 'complete' : verificationProgress > 80 ? 'processing' : 'pending'
+    }
+  ];
+
+  if (!connected) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 py-16 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          <Shield className="mx-auto h-16 w-16 text-purple-600" />
+          <h1 className="text-2xl font-semibold text-gray-900 mt-6">
+            Connect your wallet to register your music
+          </h1>
+          <button
+            onClick={connect}
+            className="mt-6 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 focus:ring-4 focus:ring-purple-200 transition-colors duration-200"
+          >
+            Connect Wallet
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50 py-16 px-4">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-purple-400">
             Register Your Music
@@ -198,7 +256,6 @@ const UnifiedSongRegistration = () => {
           </p>
         </div>
 
-        {/* Main Content */}
         <div className="space-y-8">
           {/* File Upload Section */}
           <motion.div
@@ -222,8 +279,8 @@ const UnifiedSongRegistration = () => {
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-xl p-12 transition-all duration-300 ${isDragActive
-                  ? 'border-purple-400 bg-purple-50'
-                  : 'border-gray-200 hover:border-purple-200 hover:bg-gray-50'
+                    ? 'border-purple-400 bg-purple-50'
+                    : 'border-gray-200 hover:border-purple-200 hover:bg-gray-50'
                   }`}
               >
                 <input {...getInputProps()} />
@@ -257,7 +314,44 @@ const UnifiedSongRegistration = () => {
                   exit={{ opacity: 0, height: 0 }}
                   className="mt-8"
                 >
-                  <div className="space-y-4">
+                  <h3 className="text-lg font-medium text-gray-900 mb-6">Verification Progress</h3>
+
+                  {/* Steps */}
+                  <div className="space-y-6">
+                    {steps.map((step, index) => (
+                      <div key={index} className="flex items-center gap-4">
+                        <div className="relative">
+                          {step.status === 'processing' ? (
+                            <Loader2 className="h-6 w-6 text-purple-600 animate-spin" />
+                          ) : (
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            >
+                              <step.icon
+                                className={`h-6 w-6 ${step.status === 'complete'
+                                    ? 'text-green-500'
+                                    : 'text-gray-300'
+                                  }`}
+                              />
+                            </motion.div>
+                          )}
+                        </div>
+                        <span className={`text-sm ${step.status === 'processing'
+                            ? 'text-purple-600'
+                            : step.status === 'complete'
+                              ? 'text-green-600'
+                              : 'text-gray-500'
+                          }`}>
+                          {step.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="mt-8">
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                       <motion.div
                         initial={{ width: 0 }}
@@ -265,275 +359,122 @@ const UnifiedSongRegistration = () => {
                         className="h-full bg-gradient-to-r from-purple-600 to-purple-400"
                       />
                     </div>
-
-                    {verificationStatus === 'success' && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="p-4 bg-green-50 rounded-lg flex items-start gap-3"
-                      >
-                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-green-800">
-                            Verification Successful
-                          </p>
-                          <p className="mt-1 text-sm text-green-600">
-                            Please proceed to fill in the song details below.
-                          </p>
-                        </div>
-                      </motion.div>
-                    )}
-
-                    {verificationStatus === 'error' && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        className="p-4 bg-red-50 rounded-lg flex items-start gap-3"
-                      >
-                        <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0" />
-                        <div>
-                          <p className="text-sm font-medium text-red-800">
-                            Verification Failed
-                          </p>
-                          <p className="mt-1 text-sm text-red-600">
-                            {error || 'An error occurred during verification.'}
-                          </p>
-                        </div>
-                      </motion.div>
-                    )}
                   </div>
+
+                  {/* Content Analysis Results */}
+                  {contentAnalysis && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className={`mt-6 p-4 ${contentAnalysis.isExplicit ? 'bg-red-50' : 'bg-green-50'
+                        } rounded-lg flex items-start gap-3`}
+                    >
+                      {contentAnalysis.isExplicit ? (
+                        <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      ) : (
+                        <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                      )}
+                      <div>
+                        <p className={`text-sm font-medium ${contentAnalysis.isExplicit ? 'text-red-800' : 'text-green-800'
+                          }`}>
+                          {contentAnalysis.isExplicit ? 'Explicit Content Detected' : 'Content Analysis Complete'}
+                        </p>
+                        {contentAnalysis.reason && (
+                          <p className={`mt-1 text-sm ${contentAnalysis.isExplicit ? 'text-red-600'
+                            : 'text-green-600'
+                            }`}>
+                            {contentAnalysis.reason}
+                          </p>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Error Handling */}
+                  {error && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="mt-6 p-4 bg-red-50 rounded-lg flex items-start gap-3"
+                    >
+                      <AlertCircle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-red-800">
+                          Error during verification
+                        </p>
+                        <p className="mt-1 text-sm text-red-600">
+                          {error}
+                        </p>
+                      </div>
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
           </motion.div>
 
-          {/* Registration Form */}
-          {verificationStatus === 'success' && (
-            <motion.form
+          {/* Form Section */}
+          {activeSection === 'form' && (
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="space-y-8"
-              onSubmit={handleSubmit}
+              className="bg-white rounded-xl shadow-lg border border-gray-100 p-8"
             >
-              {/* Song Information */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                  <Music className="text-purple-600 h-7 w-7" />
-                  Song Information
-                </h2>
+              <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-3 mb-6">
+                <Music className="text-purple-600 h-7 w-7" />
+                Song Details
+              </h2>
 
+              <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title
-                    </label>
-                    <input
-                      type="text"
-                      name="title"
-                      value={formData.title}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Album
-                    </label>
-                    <input
-                      type="text"
-                      name="album"
-                      value={formData.album}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Length (seconds)
-                    </label>
-                    <input
-                      type="number"
-                      name="length"
-                      value={formData.length}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Release Year
-                    </label>
-                    <input
-                      type="number"
-                      name="release_year"
-                      value={formData.release_year}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Contributors Section */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-                <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-3">
-                  <Users className="text-purple-600 h-7 w-7" />
-                  Contributors & Shares
-                </h2>
-
-                {/* Artist Details */}
-                <div className="mb-8 p-6 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Artist</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <input
-                      type="text"
-                      name="artist_name"
-                      value={formData.artist_name}
-                      onChange={handleChange}
-                      placeholder="Artist Name"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                    <input
-                      type="number"
-                      name="artist_share"
-                      value={formData.artist_share}
-                      onChange={handleChange}
-                      placeholder="Artist Share (%)"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                  </div>
+                  {[
+                    { id: 'title', label: 'Song Title', type: 'text', required: true },
+                    { id: 'artist_name', label: 'Artist Name', type: 'text', required: true },
+                    { id: 'album', label: 'Album', type: 'text' },
+                    { id: 'release_year', label: 'Release Year', type: 'number', required: true },
+                    { id: 'length', label: 'Length (seconds)', type: 'number', required: true },
+                    { id: 'artist_share', label: 'Artist Share (%)', type: 'number', required: true },
+                    { id: 'composer_name', label: 'Composer Name', type: 'text' },
+                    { id: 'composer_share', label: 'Composer Share (%)', type: 'number' },
+                    { id: 'producer_name', label: 'Producer Name', type: 'text' },
+                    { id: 'producer_share', label: 'Producer Share (%)', type: 'number' },
+                    { id: 'label_name', label: 'Label Name', type: 'text' },
+                    { id: 'label_share', label: 'Label Share (%)', type: 'number' },
+                  ].map((field) => (
+                    <div key={field.id}>
+                      <label htmlFor={field.id} className="block text-sm font-medium text-gray-700 mb-1">
+                        {field.label}
+                      </label>
+                      <input
+                        type={field.type}
+                        name={field.id}
+                        id={field.id}
+                        value={formData[field.id]}
+                        onChange={handleChange}
+                        className="mt-1 block w-full rounded-lg border border-gray-200 bg-gray-50 p-3 shadow-sm focus:border-purple-500 focus:ring-purple-500 focus:bg-white transition-all duration-200"
+                        required={field.required}
+                      />
+                    </div>
+                  ))}
                 </div>
 
-                {/* Composer Details */}
-                <div className="mb-8 p-6 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Composer</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <input
-                      type="text"
-                      name="composer_name"
-                      value={formData.composer_name}
-                      onChange={handleChange}
-                      placeholder="Composer Name"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                    <input
-                      type="text"
-                      name="composer_pubkey"
-                      value={formData.composer_pubkey}
-                      onChange={handleChange}
-                      placeholder="Composer Wallet Address"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                    <input
-                      type="number"
-                      name="composer_share"
-                      value={formData.composer_share}
-                      onChange={handleChange}
-                      placeholder="Composer Share (%)"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                  </div>
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-500 text-white rounded-lg hover:from-purple-700 hover:to-purple-600 focus:ring-4 focus:ring-purple-200 transition-all duration-200 shadow-lg"
+                  >
+                    {isSubmitting ? (
+                      <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    ) : (
+                      'Register Song'
+                    )}
+                  </button>
                 </div>
-
-                {/* Producer Details */}
-                <div className="mb-8 p-6 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Producer</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <input
-                      type="text"
-                      name="producer_name"
-                      value={formData.producer_name}
-                      onChange={handleChange}
-                      placeholder="Producer Name"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                    <input
-                      type="text"
-                      name="producer_pubkey"
-                      value={formData.producer_pubkey}
-                      onChange={handleChange}
-                      placeholder="Producer Wallet Address"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                    <input
-                      type="number"
-                      name="producer_share"
-                      value={formData.producer_share}
-                      onChange={handleChange}
-                      placeholder="Producer Share (%)"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                  </div>
-                </div>
-
-                {/* Label Details */}
-                <div className="p-6 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">Label</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <input
-                      type="text"
-                      name="label_name"
-                      value={formData.label_name}
-                      onChange={handleChange}
-                      placeholder="Label Name"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                    <input
-                      type="text"
-                      name="label_pubkey"
-                      value={formData.label_pubkey}
-                      onChange={handleChange}
-                      placeholder="Label Wallet Address"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                    <input
-                      type="number"
-                      name="label_share"
-                      value={formData.label_share}
-                      onChange={handleChange}
-                      placeholder="Label Share (%)"
-                      className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-200 focus:border-purple-500"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Submit Button */}
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="inline-flex items-center justify-center px-8 py-3.5 text-lg font-semibold text-white bg-purple-600 rounded-lg hover:bg-purple-700 focus:ring-4 focus:ring-purple-200 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                      Registering...
-                    </>
-                  ) : (
-                    'Register Song'
-                  )}
-                </button>
-              </div>
-            </motion.form>
+              </form>
+            </motion.div>
           )}
+
         </div>
       </div>
     </div>
@@ -541,3 +482,4 @@ const UnifiedSongRegistration = () => {
 };
 
 export default UnifiedSongRegistration;
+                            

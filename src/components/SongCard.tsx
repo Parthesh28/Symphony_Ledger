@@ -1,44 +1,40 @@
 import React from 'react';
-import { Play, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { Song } from '../types/music';
 
 interface SongCardProps {
   song: Song;
-  onPlay: (song: Song) => void;
   onShowInfo: (song: Song) => void;
 }
 
-export function SongCard({ song, onPlay, onShowInfo }: SongCardProps) {
+export function SongCard({ song, onShowInfo }: SongCardProps) {
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
-      <img 
-        src={song.coverUrl} 
-        alt={`${song.title} cover`} 
-        className="w-full h-48 object-cover"
-      />
-      <div className="p-4">
-        <h3 className="font-bold text-lg truncate">{song.title}</h3>
-        <p className="text-gray-600 truncate">{song.artist}</p>
-        <p className="text-gray-500 text-sm">{song.album}</p>
-        
-        <div className="mt-4 flex justify-between items-center">
-          <span className="text-sm text-gray-500">{song.duration}</span>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onPlay(song)}
-              className="p-2 rounded-full bg-purple-100 hover:bg-purple-200 text-purple-600 transition-colors"
-            >
-              <Play size={18} />
-            </button>
-            <button
-              onClick={() => onShowInfo(song)}
-              className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-            >
-              <Info size={18} />
-            </button>
+    <motion.div
+      whileHover={{ y: -4 }}
+      className="group px-6 py-4 bg-white rounded-lg hover:bg-purple-50 transition-all duration-300 cursor-pointer border border-transparent hover:border-purple-100"
+      onClick={() => onShowInfo(song)}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-baseline gap-4">
+            <h3 className="font-medium text-lg text-gray-900 truncate group-hover:text-purple-700 transition-colors">
+              {song.title}
+            </h3>
+            <span className="text-sm text-gray-400 flex-shrink-0">
+              {song.duration}
+            </span>
+          </div>
+          <div className="mt-1 flex items-center gap-2 text-sm">
+            <span className="font-medium text-gray-700">{song.artist}</span>
+            <span className="text-gray-300">•</span>
+            <span className="text-gray-500 truncate">{song.album}</span>
           </div>
         </div>
       </div>
-    </div>
+
+      <div className="mt-2 w-full h-0.5 bg-gray-100 rounded-full overflow-hidden">
+        <div className="w-0 h-full bg-purple-500 group-hover:w-full transition-all duration-700 ease-out" />
+      </div>
+    </motion.div>
   );
 }

@@ -17,7 +17,7 @@ export const useSymphonyProgram = () => {
   const wallet = useAnchorWallet();
 
   const getProgram = () => {
-    if (!wallet) throw new Error("Wallet not connected");
+    // if (!wallet) throw new Error("Wallet not connected");
 
     const provider = new AnchorProvider(
       connection,

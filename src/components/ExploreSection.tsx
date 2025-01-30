@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Search, Music2, Loader2 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { songs } from "../data/songs";
 import { Song, Genre } from "../types/music";
 import { SongCard } from "./SongCard";
 import { SongInfoModal } from "./SongInfoModal";
@@ -10,7 +9,6 @@ import { AudioPlayer } from "./AudioPlayer";
 import "@solana/wallet-adapter-react-ui/styles.css";
 import { useSymphonyProgram } from "../smart";
 import { useWallet } from "@solana/wallet-adapter-react";
-import { Keypair } from "@solana/web3.js";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -37,56 +35,48 @@ export function ExploreSection() {
   const [showInfoModal, setShowInfoModal] = useState(false);
   const [playingSong, setPlayingSong] = useState<Song | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [recordings, setRecordings] = useState<Song[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const { addRecording } = useSymphonyProgram();
-  const { connected } = useWallet();
+  const { fetchAllRecordings } = useSymphonyProgram();
+  const { connected, wallet } = useWallet();
 
-  // New function to handle recording submission
-  const handleAddRecording = async () => {
-    if (!connected) {
-      alert("Please connect your wallet first");
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const composerKeypair = Keypair.generate();
-      const producerKeypair = Keypair.generate();
-      const labelKeypair = Keypair.generate();
-
-      const recordingData = {
-        length: 300, // Length of the recording in seconds
-        releaseYear: 2023, // Year of release
-        artistName: "John Doe", // Name of the artist
-        artistShare: 40, // Artist's share percentage
-        composerName: "Jane Smith", // Name of the composer
-        composerPubkey: composerKeypair.publicKey.toBase58(), // Random composer public key
-        composerShare: 30, // Composer's share percentage
-        producerName: "Alice Johnson", // Name of the producer
-        producerPubkey: producerKeypair.publicKey.toBase58(), // Random producer public key
-        producerShare: 20, // Producer's share percentage
-        labelName: "Demo Records", // Name of the label
-        labelPubkey: labelKeypair.publicKey.toBase58(), // Random label public key
-        labelShare: 10, // Label's share percentage
-        id: "rec123", // Unique ID for the recording
-        title: "Demo Song", // Title of the recording
-        album: "Demo Album", // Album name
-      };
-      const result = await addRecording(recordingData);
-
-      if (result.success) {
-        // Handle success (e.g., show notification, update UI)
-        console.log("Recording added successfully:", result.signature);
-      } else {
-        throw result.error;
+  // Fetch all recordings from the blockchain
+  useEffect(() => {
+    const loadRecordings = async () => {
+      if (!wallet) {
+        setIsLoading(false);
+        return;
       }
-    } catch (error) {
-      console.error("Failed to add recording:", error);
-      // Handle error (e.g., show error message)
-    } finally {
-      setIsLoading(false);
-    }
-  };
+
+      try {
+        const fetchedRecordings = await fetchAllRecordings();
+        if (fetchedRecordings.success === false) {
+          console.error("Error:", fetchedRecordings.error);
+          setError("Failed to fetch recordings");
+          return;
+        }
+        setRecordings(
+          fetchedRecordings.map((r) => ({
+            ...r.account,
+            id: r.publicKey.toBase58(),
+            title: r.account.title,
+            artist: r.account.artistName,
+            genre: r.account.genre,
+            cover: r.account.coverUrl,
+            audio: r.account.audioUrl,
+          }))
+        );
+      } catch (error) {
+        console.error("Error loading recordings:", error);
+        setError("An error occurred while fetching recordings");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadRecordings();
+  }, [wallet]);
 
   const genres: Genre[] = [
     "All",
@@ -99,32 +89,27 @@ export function ExploreSection() {
     "R&B",
   ];
 
-  // Simulate loading state
-  useEffect(() => {
-    setTimeout(() => setIsLoading(false), 1000);
-  }, []);
-
-  const filteredSongs = songs.filter((song) => {
+  // Filter recordings based on search query and selected genre
+  const filteredRecordings = recordings.filter((recording) => {
     const matchesSearch =
-      song.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      song.artist.toLowerCase().includes(searchQuery.toLowerCase());
+      recording.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      recording.artist.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesGenre =
-      selectedGenre === "All" || song.genre === selectedGenre;
+      selectedGenre === "All" || recording.genre === selectedGenre;
     return matchesSearch && matchesGenre;
   });
 
-  const handlePlay = (song: Song) => {
-    setPlayingSong(song);
+  const handlePlay = (recording: Song) => {
+    setPlayingSong(recording);
   };
 
-  const handleShowInfo = (song: Song) => {
-    setSelectedSong(song);
+  const handleShowInfo = (recording: Song) => {
+    setSelectedSong(recording);
     setShowInfoModal(true);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-white to-purple-50">
-      <button onClick={() => handleAddRecording()}>hello</button>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header Section */}
         <motion.div
@@ -173,11 +158,10 @@ export function ExploreSection() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                   onClick={() => setSelectedGenre(genre)}
-                  className={`px-6 py-2 rounded-xl text-sm font-medium transition-all duration-300 shadow-sm ${
-                    selectedGenre === genre
+                  className={`px-6 py-2 rounded-xl text-sm font-medium transition-all duration-300 shadow-sm ${selectedGenre === genre
                       ? "bg-purple-600 text-white shadow-purple-200"
                       : "bg-white/80 backdrop-blur-sm text-gray-600 hover:bg-purple-50"
-                  }`}
+                    }`}
                 >
                   {genre}
                 </motion.button>
@@ -185,10 +169,14 @@ export function ExploreSection() {
             </div>
           </motion.div>
 
-          {/* Songs Grid */}
+          {/* Recordings Grid */}
           {isLoading ? (
             <div className="flex justify-center items-center py-20">
               <Loader2 className="w-8 h-8 text-purple-600 animate-spin" />
+            </div>
+          ) : error ? (
+            <div className="text-center py-20">
+              <p className="text-red-600">{error}</p>
             </div>
           ) : (
             <motion.div
@@ -197,11 +185,11 @@ export function ExploreSection() {
               animate="visible"
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
             >
-              {filteredSongs.length > 0 ? (
-                filteredSongs.map((song) => (
-                  <motion.div key={song.id} variants={itemVariants} layout>
+              {filteredRecordings.length > 0 ? (
+                filteredRecordings.map((recording) => (
+                  <motion.div key={recording.id} variants={itemVariants} layout>
                     <SongCard
-                      song={song}
+                      song={recording}
                       onPlay={handlePlay}
                       onShowInfo={handleShowInfo}
                     />
@@ -215,7 +203,7 @@ export function ExploreSection() {
                 >
                   <Music2 className="w-16 h-16 text-purple-300 mx-auto mb-4" />
                   <p className="text-gray-500">
-                    No songs found matching your criteria
+                    No recordings found matching your criteria
                   </p>
                 </motion.div>
               )}
@@ -245,10 +233,10 @@ export function ExploreSection() {
               exit={{ y: 100, opacity: 0 }}
               className="fixed bottom-0 left-0 right-0"
             >
-              <AudioPlayer
-                song={playingSong}
-                onClose={() => setPlayingSong(null)}
-              />
+                {/* <AudioPlayer
+                  song={playingSong}
+                  onClose={() => setPlayingSong(null)}
+                /> */}
             </motion.div>
           )}
         </AnimatePresence>
