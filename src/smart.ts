@@ -256,6 +256,16 @@ export const useSymphonyProgram = () => {
       return { success: false, error };
     }
   };
+  const fetchAllTickets = async () => {
+    try {
+      if (!wallet) throw new Error("Wallet not connected");
+      const program = getProgram();
+      return await program.account.ticketSale.all();
+    } catch (error) {
+      console.error("Error fetching recordings:", error);
+      return { success: false, error };
+    }
+  };
 
   return {
     addRecording,
@@ -264,6 +274,7 @@ export const useSymphonyProgram = () => {
     createTicketSale,
     purchaseTicket,
     fetchAllRecordings,
-    fetchAllShows
+    fetchAllShows,
+    fetchAllTickets
   };
 };
